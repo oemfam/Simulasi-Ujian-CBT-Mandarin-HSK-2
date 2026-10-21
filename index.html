@@ -19,9 +19,9 @@
         <div id="master-audio-container" class="hidden bg-red-800 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-red-600">
             <span class="text-xs font-semibold whitespace-nowrap">🔊 Audio Listening (1-35):</span>
             <audio id="global-audio" controls controlsList="nodownload" class="h-8 w-60 md:w-64">
-    <source src="https://raw.githubusercontent.com/oemfam/Simulasi-Ujian-CBT-Mandarin-HSK-2/main/level-2%20mp3.mp3" type="audio/mpeg">
-    Browser Anda tidak mendukung audio.
-</audio>
+                <source src="https://raw.githubusercontent.com/oemfam/Simulasi-Ujian-CBT-Mandarin-HSK-2/main/level-2%20mp3.mp3" type="audio/mpeg">
+                Browser Anda tidak mendukung audio.
+            </audio>
         </div>
 
         <div id="timer-box" class="hidden bg-red-900 px-3 py-1 rounded font-mono text-sm whitespace-nowrap">
@@ -59,7 +59,7 @@
                 <div class="bg-amber-50 border-l-4 border-amber-500 p-3 text-xs text-amber-700">
                     Peringatan: Dilarang membuka tab lain atau meninggalkan halaman ujian. Sistem mendeteksi perpindahan tab secara otomatis!
                 </div>
-                <button onclick="initializeExam()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition duration-200">Mulai Ujian</button>
+                <button onclick="initializeExam()" id="start-btn" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition duration-200 disabled:opacity-50">Memuat Sistem...</button>
             </div>
         </div>
 
@@ -111,10 +111,15 @@
     </main>
 
     <footer class="text-center py-4 text-xs text-slate-500">
-        Sistem CBT Standar HSK &copy; 2026 @OemFAM x BELAJARO
+        Sistem CBT Standar HSK &copy; 2026 OemFAM x BELAJARO
     </footer>
 
     <script>
+        // =========================================================================
+        // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        // =========================================================================
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUCa1pkbUgsIsWM3zf86nkXFjoi568GKhBbvzKlwrFuIGagw8wLgFaDNVCDtdA93Fu/exec";
+
         let questions = [];
         let petunjukList = {};
         let currentIndex = 0;
@@ -125,26 +130,25 @@
         let timerInterval;
         let timeLeft = 55 * 60; // 55 Menit
         let violationCount = 0;
-        // Variabel dan Pengaman Audio agar Tidak Bisa Melompat (Seeking)
-let lastPlayedTime = 0;
-const masterAudio = document.getElementById('global-audio');
 
-if (masterAudio) {
-    // Mencegah peserta melompat ke depan MAUPUN mundur ke belakang
-    masterAudio.addEventListener('seeking', function() {
-        const delta = Math.abs(masterAudio.currentTime - lastPlayedTime);
-        // Jika perubahan waktu lebih dari 1 detik (di-klik/di-drag), paksa kembali ke posisi waktu terakhir
-        if (delta > 1) {
-            masterAudio.currentTime = lastPlayedTime;
-        }
-    });
+        let lastPlayedTime = 0;
+        const masterAudio = document.getElementById('global-audio');
 
-    masterAudio.addEventListener('timeupdate', function() {
-        if (!masterAudio.seeking) {
-            lastPlayedTime = masterAudio.currentTime;
+        if (masterAudio) {
+            masterAudio.addEventListener('seeking', function() {
+                const delta = Math.abs(masterAudio.currentTime - lastPlayedTime);
+                if (delta > 1) {
+                    masterAudio.currentTime = lastPlayedTime;
+                }
+            });
+
+            masterAudio.addEventListener('timeupdate', function() {
+                if (!masterAudio.seeking) {
+                    lastPlayedTime = masterAudio.currentTime;
+                }
+            });
         }
-    });
-}
+
         document.addEventListener("visibilitychange", function() {
             if (document.hidden && !document.getElementById('exam-screen').classList.contains('hidden')) {
                 violationCount++;
@@ -158,18 +162,11 @@ if (masterAudio) {
 
         document.addEventListener('contextmenu', event => event.preventDefault());
 
-        function initializeExam() {
-            studentName = document.getElementById('student-name').value.trim();
-            studentNationality = document.getElementById('student-nationality').value.trim();
-            studentGender = document.getElementById('student-gender').value;
-
-            if (!studentName || !studentNationality) {
-                alert("Mohon isi Nama Lengkap dan Kewarganegaraan terlebih dahulu!");
-                return;
-            }
-
-            google.script.run
-                .withSuccessHandler(function(res) {
+        // Fungsi Otomatis Ambil Data Soal saat Halaman Dibuka via GitHub Pages
+        window.onload = function() {
+            fetch(SCRIPT_URL + "?action=getQuestions")
+                .then(res => res.json())
+                .then(res => {
                     if (res.status === 'not_started' || res.status === 'ended') {
                         document.getElementById('login-title').innerText = "Akses Ujian Ditutup";
                         document.getElementById('login-desc').innerText = res.message;
@@ -177,7 +174,6 @@ if (masterAudio) {
                         return;
                     }
 
-                    // Pisahkan baris CONTOH sebagai petunjuk, soal asli masuk ke array utama
                     let rawData = res.questions;
                     questions = [];
                     petunjukList = {};
@@ -190,23 +186,42 @@ if (masterAudio) {
                         }
                     });
 
-                    document.getElementById('login-screen').classList.add('hidden');
-document.getElementById('exam-screen').classList.remove('hidden');
-document.getElementById('timer-box').classList.remove('hidden');
-document.getElementById('master-audio-container').classList.remove('hidden');
-
-let masterAudio = document.getElementById('global-audio');
-if (masterAudio) {
-    masterAudio.load();
-    masterAudio.play().catch(error => {
-        console.log("Autoplay dicegah oleh browser, peserta perlu menekan play manual.");
-    });
-}
-
-renderQuestion();
-startTimer();
+                    document.getElementById('question-tracker').innerText = "Siap Ujian";
+                    let startBtn = document.getElementById('start-btn');
+                    startBtn.disabled = false;
+                    startBtn.innerText = "Mulai Ujian";
                 })
-                .getExamInitialization();
+                .catch(err => {
+                    console.error("Gagal memuat soal:", err);
+                    document.getElementById('question-tracker').innerText = "Gagal memuat koneksi data!";
+                });
+        };
+
+        function initializeExam() {
+            studentName = document.getElementById('student-name').value.trim();
+            studentNationality = document.getElementById('student-nationality').value.trim();
+            studentGender = document.getElementById('student-gender').value;
+
+            if (!studentName || !studentNationality) {
+                alert("Mohon isi Nama Lengkap dan Kewarganegaraan terlebih dahulu!");
+                return;
+            }
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('exam-screen').classList.remove('hidden');
+            document.getElementById('timer-box').classList.remove('hidden');
+            document.getElementById('master-audio-container').classList.remove('hidden');
+
+            let masterAudio = document.getElementById('global-audio');
+            if (masterAudio) {
+                masterAudio.load();
+                masterAudio.play().catch(error => {
+                    console.log("Autoplay dicegah oleh browser, peserta perlu menekan play manual.");
+                });
+            }
+
+            renderQuestion();
+            startTimer();
         }
 
         function startTimer() {
@@ -233,32 +248,28 @@ startTimer();
             document.getElementById('question-label').innerText = q.tipe;
             document.getElementById('question-type').innerText = q.bagian;
 
-            // Tampilkan contoh soal / petunjuk otomatis jika tersedia untuk bagian ini
-            // Tampilkan contoh soal / petunjuk otomatis hanya jika tersedia DAN ini adalah awal bagian (soal pertama di bagian tersebut)
-let contohBox = document.getElementById('contoh-box');
-let isFirstOfSection = questions.findIndex(item => item.bagian === q.bagian) === currentIndex;
+            let contohBox = document.getElementById('contoh-box');
+            let isFirstOfSection = questions.findIndex(item => item.bagian === q.bagian) === currentIndex;
 
-if (petunjukList[q.bagian] && isFirstOfSection) {
-    let p = petunjukList[q.bagian];
-    let pHtml = `<p class="mb-2">${p.pertanyaan}</p>`;
-    if (p.imageUrl && p.imageUrl.trim() !== "") {
-        pHtml += `<div class="mb-2"><img src="${p.imageUrl}" class="max-h-36 rounded border mx-auto object-contain bg-white"></div>`;
-    }
-    document.getElementById('contoh-bagian-label').innerText = q.bagian;
-    document.getElementById('contoh-content').innerHTML = pHtml;
-    contohBox.classList.remove('hidden');
-} else {
-    contohBox.classList.add('hidden');
-}
+            if (petunjukList[q.bagian] && isFirstOfSection) {
+                let p = petunjukList[q.bagian];
+                let pHtml = `<p class="mb-2">${p.pertanyaan}</p>`;
+                if (p.imageUrl && p.imageUrl.trim() !== "") {
+                    pHtml += `<div class="mb-2"><img src="${p.imageUrl}" class="max-h-36 rounded border mx-auto object-contain bg-white"></div>`;
+                }
+                document.getElementById('contoh-bagian-label').innerText = q.bagian;
+                document.getElementById('contoh-content').innerHTML = pHtml;
+                contohBox.classList.remove('hidden');
+            } else {
+                contohBox.classList.add('hidden');
+            }
 
-            // Render Pertanyaan Utama
             let html = `<p class="text-lg font-medium text-slate-800 mb-4">${currentIndex + 1}. ${q.pertanyaan}</p>`;
 
             if (q.imageUrl && q.imageUrl.trim() !== "") {
                 html += `<div class="mb-4"><img src="${q.imageUrl}" class="max-h-48 rounded border mx-auto object-contain"></div>`;
             }
 
-            // Opsi pilihan sampai F
             let options = ['A', 'B', 'C', 'D', 'E', 'F'];
             html += `<div class="space-y-2">`;
             options.forEach(opt => {
@@ -354,27 +365,35 @@ if (petunjukList[q.bagian] && isFirstOfSection) {
 
             document.getElementById('exam-screen').innerHTML = `<div class="text-center py-10"><p class="text-lg font-medium text-slate-600">Menghitung dan mengirim nilai ke sistem...</p></div>`;
 
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    document.getElementById('master-audio-container').classList.add('hidden');
-                    document.getElementById('exam-screen').classList.add('hidden');
-                    document.getElementById('timer-box').classList.add('hidden');
-                    document.getElementById('result-screen').classList.remove('hidden');
-                    
-                    document.getElementById('final-score').innerText = res.skorTotal;
-                    document.getElementById('score-listening').innerText = res.skorListening + " / 100";
-                    document.getElementById('score-reading').innerText = res.skorReading + " / 100";
-                    
-                    let badge = document.getElementById('passing-badge');
-                    if (res.skorTotal >= 120) {
-                        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800";
-                        badge.innerText = "Status: LULUS (Min. 120)";
-                    } else {
-                        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800";
-                        badge.innerText = "Status: TIDAK LULUS (Min. 120)";
-                    }
-                })
-                .submitExam(payload);
+            // Kirim data via fetch POST ke Google Apps Script
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
+                document.getElementById('master-audio-container').classList.add('hidden');
+                document.getElementById('exam-screen').classList.add('hidden');
+                document.getElementById('timer-box').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                
+                document.getElementById('final-score').innerText = res.skorTotal || totalScore;
+                document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
+                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.skorReading : finalReading) + " / 100";
+                
+                let badge = document.getElementById('passing-badge');
+                if ((res.skorTotal || totalScore) >= 120) {
+                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800";
+                    badge.innerText = "Status: LULUS (Min. 120)";
+                } else {
+                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800";
+                    badge.innerText = "Status: TIDAK LULUS (Min. 120)";
+                }
+            })
+            .catch(err => {
+                console.error("Gagal kirim data:", err);
+                alert("Terjadi kesalahan saat mengirim jawaban, namun data Anda tetap diproses.");
+            });
         }
     </script>
 </body>
