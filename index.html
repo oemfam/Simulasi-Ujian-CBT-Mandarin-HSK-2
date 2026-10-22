@@ -289,16 +289,29 @@
 
             let html = `<p class="text-lg font-medium text-slate-800 mb-4">${currentIndex + 1}. ${q.pertanyaan || ""}</p>`;
 
-            let imgLink = q.imageurl || q.imageUrl || "";
-            if (imgLink && imgLink.trim() !== "") {
-                if (imgLink.includes("google.com") || imgLink.includes("googleusercontent.com")) {
-                    let fileIdMatch = imgLink.match(/[-\w]{25,}/);
-                    if (fileIdMatch) {
-                        imgLink = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
-                    }
+            // Render Gambar Utama (Gambar 1)
+        let imgLink = q.imageurl || q.imageUrl || "";
+        if (imgLink && imgLink.trim() !== "") {
+            if (imgLink.includes("google.com") || imgLink.includes("googleusercontent.com")) {
+                let fileIdMatch = imgLink.match(/[-\w]{25,}/);
+                if (fileIdMatch) {
+                    imgLink = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
                 }
-                html += `<div class="mb-4"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
             }
+            html += `<div class="mb-3"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
+        }
+
+        // Render Gambar Kedua (Gambar 2) jika ada
+        let imgLink2 = q.imageurl2 || q.imageUrl2 || "";
+        if (imgLink2 && imgLink2.trim() !== "") {
+            if (imgLink2.includes("google.com") || imgLink2.includes("googleusercontent.com")) {
+                let fileIdMatch2 = imgLink2.match(/[-\w]{25,}/);
+                if (fileIdMatch2) {
+                    imgLink2 = `https://lh3.googleusercontent.com/d/${fileIdMatch2[0]}`;
+                }
+            }
+            html += `<div class="mb-4"><img src="${imgLink2}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
+        }
 
             let options = ['A', 'B', 'C', 'D', 'E', 'F'];
             html += `<div class="space-y-2">`;
