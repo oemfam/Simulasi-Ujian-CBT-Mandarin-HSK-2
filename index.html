@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian CBT Mandarin HSK 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Pustaka pdf-lib untuk membuat sertifikat dari gambar bg -->
+    <!-- Pustaka pdf-lib & fontkit untuk mendukung Font Unicode / Mandarin -->
     <script src="https://unpkg.com/pdf-lib@1.4.0/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between select-none" oncopy="return false" oncut="return false" onpaste="return false">
 
@@ -454,6 +455,12 @@
 
                 // Buat Dokumen PDF Baru Sesuai Ukuran Gambar Sertifikat
                 const pdfDoc = await PDFLib.PDFDocument.create();
+                
+                // Registrasi fontkit untuk mendukung Font Unicode (Mandarin Hanzi)
+                if (window.fontkit) {
+                    pdfDoc.registerFontkit(window.fontkit);
+                }
+
                 const image = await pdfDoc.embedJpg(imgBytes);
                 
                 // Ambil Dimensi Asli Gambar
@@ -468,13 +475,23 @@
                     height: height,
                 });
 
+                // Muat Font Unicode untuk Teks Mandarin (Noto Sans SC)
+                let customFont;
+                try {
+                    const fontUrl = 'https://cdn.jsdelivr.net/npm/@canvas-fonts/noto-sans-sc@1.0.4/NotoSansSC-Regular.ttf';
+                    const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
+                    customFont = await pdfDoc.embedFont(fontBytes);
+                } catch (fontErr) {
+                    console.warn("Gagal memuat font Mandarin, menggunakan font standar:", fontErr);
+                }
+
                 // Ambil Data Nilai dan Biodata
                 const name = studentName.toUpperCase();
                 
-                // KONVERSI FORMAT GENDER UNTUK SERTIFIKAT (Male / Female saja agar sesuai font standar PDF)
-                let genderCert = "Male";
+                // PENENTUAN GENDER MANDARIN (男 / 女)
+                let genderCert = "男";
                 if (studentGender.toLowerCase().includes("perempuan") || studentGender.toLowerCase().includes("female") || studentGender.includes("女")) {
-                    genderCert = "Female";
+                    genderCert = "女";
                 }
 
                 const nationality = studentNationality.toUpperCase();
@@ -488,42 +505,45 @@
                 const day = String(today.getDate()).padStart(2, '0');
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
+                // Opsi Font (Gunakan customFont Mandarin jika berhasil dimuat)
+                const fontOptions = customFont ? { font: customFont } : {};
+
                 // ==============================================================
-                // KOORDINAT PENYESUAIAN BIODATA & TANGGAL (100% PRESISI)
+                // KOORDINAT PENYESUAIAN PRESISI FINAL
                 // ==============================================================
 
-                // 1. Nama (Name) - Di atas garis nama
-                page.drawText(name, { x: width * 0.25, y: height * 0.685, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 1. Nama (Name) - Diturunkan dan digeser sedikit ke kiri
+                page.drawText(name, { x: width * 0.22, y: height * 0.672, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 2. Jenis Kelamin (Gender) - Di atas garis gender (Male / Female)
-                page.drawText(genderCert, { x: width * 0.25, y: height * 0.642, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 2. Jenis Kelamin (Gender) - Ditulis 男 atau 女
+                page.drawText(genderCert, { x: width * 0.22, y: height * 0.630, size: height * 0.016, color: PDFLib.rgb(0, 0, 0), ...fontOptions });
 
-                // 3. Kewarganegaraan (Nationality) - Di atas garis nationality
-                page.drawText(nationality, { x: width * 0.53, y: height * 0.642, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 3. Kewarganegaraan (Nationality)
+                page.drawText(nationality, { x: width * 0.53, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 4. Tahun (Year) - Tepat sebelum karakter 年
-                page.drawText(year, { x: width * 0.445, y: height * 0.601, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 4. Tahun (Year) - Digeser ke kiri (sebelum 年)
+                page.drawText(year, { x: width * 0.410, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 5. Bulan (Month) - Tepat sebelum karakter 月
-                page.drawText(month, { x: width * 0.60, y: height * 0.601, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 5. Bulan (Month) - Digeser ke kiri (sebelum 月)
+                page.drawText(month, { x: width * 0.560, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 6. Hari (Day) - Tepat sebelum karakter 日
-                page.drawText(day, { x: width * 0.73, y: height * 0.601, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 6. Hari (Day) - Digeser ke kiri (sebelum 日)
+                page.drawText(day, { x: width * 0.680, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
                 // Nomor Sertifikat (No.)
-                page.drawText(randomNo, { x: width * 0.25, y: height * 0.56, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                page.drawText(randomNo, { x: width * 0.22, y: height * 0.548, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
                 // ==============================================================
                 // TABEL SKOR NILAI
                 // ==============================================================
                 // Skor Listening
-                page.drawText(scoreListening, { x: width * 0.68, y: height * 0.455, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+                page.drawText(scoreListening, { x: width * 0.68, y: height * 0.443, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
                 // Skor Reading
-                page.drawText(scoreReading, { x: width * 0.68, y: height * 0.415, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+                page.drawText(scoreReading, { x: width * 0.68, y: height * 0.403, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
                 // Total Skor
-                page.drawText(totalScore, { x: width * 0.68, y: height * 0.375, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+                page.drawText(totalScore, { x: width * 0.68, y: height * 0.363, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
                 // Unduh File PDF
                 const pdfBytes = await pdfDoc.save();
