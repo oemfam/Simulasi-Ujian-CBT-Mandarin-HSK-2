@@ -470,7 +470,13 @@
 
                 // Ambil Data Nilai dan Biodata
                 const name = studentName.toUpperCase();
-                const gender = studentGender;
+                
+                // KONVERSI FORMAT GENDER UNTUK SERTIFIKAT (Male / Female saja agar sesuai font standar PDF)
+                let genderCert = "Male";
+                if (studentGender.toLowerCase().includes("perempuan") || studentGender.toLowerCase().includes("female") || studentGender.includes("女")) {
+                    genderCert = "Female";
+                }
+
                 const nationality = studentNationality.toUpperCase();
                 const scoreListening = document.getElementById('score-listening').innerText.split(" ")[0];
                 const scoreReading = document.getElementById('score-reading').innerText.split(" ")[0];
@@ -483,32 +489,32 @@
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
                 // ==============================================================
-                // KOORDINAT PERSENTASE PRESISI DARI GAMBAR (Akurat 100%)
+                // KOORDINAT PENYESUAIAN BIODATA & TANGGAL (100% PRESISI)
                 // ==============================================================
 
-                // 1. Nama (Name)
-                page.drawText(name, { x: width * 0.25, y: height * 0.68, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                // 1. Nama (Name) - Di atas garis nama
+                page.drawText(name, { x: width * 0.25, y: height * 0.685, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 2. Jenis Kelamin (Gender)
-                page.drawText(gender, { x: width * 0.25, y: height * 0.64, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                // 2. Jenis Kelamin (Gender) - Di atas garis gender (Male / Female)
+                page.drawText(genderCert, { x: width * 0.25, y: height * 0.642, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 3. Kewarganegaraan (Nationality)
-                page.drawText(nationality, { x: width * 0.53, y: height * 0.64, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                // 3. Kewarganegaraan (Nationality) - Di atas garis nationality
+                page.drawText(nationality, { x: width * 0.53, y: height * 0.642, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 4. Tahun (Year)
-                page.drawText(year, { x: width * 0.49, y: height * 0.60, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                // 4. Tahun (Year) - Tepat sebelum karakter 年
+                page.drawText(year, { x: width * 0.445, y: height * 0.601, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 5. Bulan (Month)
-                page.drawText(month, { x: width * 0.64, y: height * 0.60, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                // 5. Bulan (Month) - Tepat sebelum karakter 月
+                page.drawText(month, { x: width * 0.60, y: height * 0.601, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 6. Hari (Day)
-                page.drawText(day, { x: width * 0.76, y: height * 0.60, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                // 6. Hari (Day) - Tepat sebelum karakter 日
+                page.drawText(day, { x: width * 0.73, y: height * 0.601, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
                 // Nomor Sertifikat (No.)
-                page.drawText(randomNo, { x: width * 0.25, y: height * 0.56, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+                page.drawText(randomNo, { x: width * 0.25, y: height * 0.56, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
                 // ==============================================================
-                // TABEL SKOR NILAI (KOLOM "Your Score")
+                // TABEL SKOR NILAI
                 // ==============================================================
                 // Skor Listening
                 page.drawText(scoreListening, { x: width * 0.68, y: height * 0.455, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
