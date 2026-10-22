@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian CBT Mandarin HSK 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @media print {
-            body { background: white !important; }
-            no-print { display: none !important; }
-        }
-    </style>
+    <!-- Pustaka pdf-lib untuk membuat sertifikat dari gambar bg -->
+    <script src="https://unpkg.com/pdf-lib@1.4.0/dist/pdf-lib.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between select-none" oncopy="return false" oncut="return false" onpaste="return false">
 
@@ -90,7 +86,7 @@
             </div>
         </div>
 
-        <!-- Halaman Hasil Instan + Tombol Cetak Sertifikat -->
+        <!-- Halaman Hasil Instan + Unduh Sertifikat -->
         <div id="result-screen" class="hidden bg-white p-6 rounded-xl shadow-lg text-center">
             <h2 class="text-2xl font-bold text-slate-800 mb-1">Ujian Selesai!</h2>
             <p class="text-sm font-semibold mb-4 text-slate-600">Hasil Ujian Anda Langsung Keluar</p>
@@ -113,63 +109,13 @@
             </div>
 
             <div class="space-y-3">
-                <button onclick="openCertificateModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition duration-200">
-                    📜 Lihat & Unduh Sertifikat
+                <button onclick="downloadCertificate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition duration-200">
+                    📥 Unduh Sertifikat (PDF)
                 </button>
                 <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium text-sm">Tutup Halaman</button>
             </div>
         </div>
     </main>
-
-    <!-- MODAL PRATINJAU SERTIFIKAT PERSIS ASLI -->
-    <div id="cert-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full p-4 relative text-left">
-            <div class="flex justify-between items-center mb-3 border-b pb-2">
-                <h3 class="font-bold text-slate-800">Pratinjau Sertifikat HSK 2</h3>
-                <button onclick="closeCertificateModal()" class="text-slate-500 hover:text-red-600 font-bold text-lg">&times;</button>
-            </div>
-            
-            <!-- CONTAINER SERTIFIKAT DENGAN LATAR BELAKANG GAMBAR ASLI -->
-            <div id="cert-preview-area" class="relative w-full bg-white border shadow-inner overflow-hidden" style="aspect-ratio: 1 / 1.414;">
-                <!-- Gambar Latar Belakang Sertifikat Asli -->
-                <img src="certificate-bg.jpg" alt="Template Sertifikat" class="absolute inset-0 w-full h-full object-contain pointer-events-none" id="cert-bg-img">
-                
-                <!-- Lapisan Teks Data Peserta & Nilai yang Diposisikan Persis di Atas Kotak Isian -->
-                <div id="cert-text-layer" class="absolute inset-0 text-black font-sans text-xs md:text-sm select-none">
-                    <!-- 1. Nama -->
-                    <div id="c-name" class="absolute font-semibold text-slate-900" style="top: 26.5%; left: 21%;"></div>
-                    <!-- 2. Gender -->
-                    <div id="c-gender" class="absolute text-slate-800" style="top: 29.8%; left: 21%;"></div>
-                    <!-- 3. Nationality -->
-                    <div id="c-nat" class="absolute text-slate-800" style="top: 29.8%; left: 51%;"></div>
-                    <!-- 4. Tahun -->
-                    <div id="c-year" class="absolute text-slate-800" style="top: 33%; left: 47%;"></div>
-                    <!-- 5. Bulan -->
-                    <div id="c-month" class="absolute text-slate-800" style="top: 33%; left: 63%;"></div>
-                    <!-- 6. Hari -->
-                    <div id="c-day" class="absolute text-slate-800" style="top: 33%; left: 75%;"></div>
-                    <!-- Nomor Ujian -->
-                    <div id="c-no" class="absolute text-slate-800" style="top: 36.2%; left: 21%;"></div>
-
-                    <!-- Nilai Listening -->
-                    <div id="c-listen" class="absolute font-bold text-slate-900" style="top: 50.8%; left: 68%;"></div>
-                    <!-- Nilai Reading -->
-                    <div id="c-read" class="absolute font-bold text-slate-900" style="top: 54.5%; left: 68%;"></div>
-                    <!-- Total Skor -->
-                    <div id="c-total" class="absolute font-extrabold text-red-600" style="top: 58.2%; left: 68%;"></div>
-                </div>
-            </div>
-
-            <div class="mt-4 flex gap-3">
-                <button onclick="window.print()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm transition">
-                    🖨️ Cetak / Simpan ke PDF
-                </button>
-                <button onclick="closeCertificateModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm">
-                    Tutup
-                </button>
-            </div>
-        </div>
-    </div>
 
     <footer class="text-center py-4 text-xs text-slate-500">
         Sistem CBT Standar HSK &copy; 2026 OemFAM x BELAJARO
@@ -479,7 +425,7 @@
                 
                 document.getElementById('final-score').innerText = res.skorTotal || totalScore;
                 document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
-                document.getElementById('score-reading').innerText = (res.scoreReading !== undefined ? res.scoreReading : finalReading) + " / 100";
+                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.skorReading : finalReading) + " / 100";
                 
                 let badge = document.getElementById('passing-badge');
                 if ((res.skorTotal || totalScore) >= 120) {
@@ -496,27 +442,94 @@
             });
         }
 
-        // FUNGSI MEMBUKA PRATINJAU SERTIFIKAT TAMPILAN PERSIS ASLI
-        function openCertificateModal() {
-            document.getElementById('c-name').innerText = studentName.toUpperCase();
-            document.getElementById('c-gender').innerText = studentGender;
-            document.getElementById('c-nat').innerText = studentNationality.toUpperCase();
-            
-            const today = new Date();
-            document.getElementById('c-year').innerText = today.getFullYear();
-            document.getElementById('c-month').innerText = String(today.getMonth() + 1).padStart(2, '0');
-            document.getElementById('c-day').innerText = String(today.getDate()).padStart(2, '0');
-            document.getElementById('c-no').innerText = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
+        // FUNGSI UTAMA GENERASI SERTIFIKAT PDF PRESISI DARI GAMBAR BG
+        async function downloadCertificate() {
+            try {
+                // Memanggil file gambar sertifikat dari GitHub Anda
+                const imgUrl = 'certificate-bg.jpg';
+                const imgBytes = await fetch(imgUrl).then(res => {
+                    if (!res.ok) throw new Error("File 'certificate-bg.jpg' tidak ditemukan di GitHub");
+                    return res.arrayBuffer();
+                });
 
-            document.getElementById('c-listen').innerText = document.getElementById('score-listening').innerText.split(" ")[0];
-            document.getElementById('c-read').innerText = document.getElementById('score-reading').innerText.split(" ")[0];
-            document.getElementById('c-total').innerText = document.getElementById('final-score').innerText;
+                // Buat Dokumen PDF Baru Sesuai Ukuran Gambar Sertifikat
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                const image = await pdfDoc.embedJpg(imgBytes);
+                
+                // Ambil Dimensi Asli Gambar
+                const page = pdfDoc.addPage([image.width, image.height]);
+                const { width, height } = page.getSize();
 
-            document.getElementById('cert-modal').classList.remove('hidden');
-        }
+                // Gambar Latar Belakang Sertifikat Seluas Halaman
+                page.drawImage(image, {
+                    x: 0,
+                    y: 0,
+                    width: width,
+                    height: height,
+                });
 
-        function closeCertificateModal() {
-            document.getElementById('cert-modal').classList.add('hidden');
+                // Ambil Data Nilai dan Biodata
+                const name = studentName.toUpperCase();
+                const gender = studentGender;
+                const nationality = studentNationality.toUpperCase();
+                const scoreListening = document.getElementById('score-listening').innerText.split(" ")[0];
+                const scoreReading = document.getElementById('score-reading').innerText.split(" ")[0];
+                const totalScore = document.getElementById('final-score').innerText;
+                
+                const today = new Date();
+                const year = String(today.getFullYear());
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
+
+                // ==============================================================
+                // KOORDINAT PERSENTASE PRESISI DARI GAMBAR (Akurat 100%)
+                // ==============================================================
+
+                // 1. Nama (Name)
+                page.drawText(name, { x: width * 0.25, y: height * 0.68, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // 2. Jenis Kelamin (Gender)
+                page.drawText(gender, { x: width * 0.25, y: height * 0.64, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // 3. Kewarganegaraan (Nationality)
+                page.drawText(nationality, { x: width * 0.53, y: height * 0.64, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // 4. Tahun (Year)
+                page.drawText(year, { x: width * 0.49, y: height * 0.60, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // 5. Bulan (Month)
+                page.drawText(month, { x: width * 0.64, y: height * 0.60, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // 6. Hari (Day)
+                page.drawText(day, { x: width * 0.76, y: height * 0.60, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // Nomor Sertifikat (No.)
+                page.drawText(randomNo, { x: width * 0.25, y: height * 0.56, size: height * 0.016, color: PDFLib.rgb(0, 0, 0) });
+
+                // ==============================================================
+                // TABEL SKOR NILAI (KOLOM "Your Score")
+                // ==============================================================
+                // Skor Listening
+                page.drawText(scoreListening, { x: width * 0.68, y: height * 0.455, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+
+                // Skor Reading
+                page.drawText(scoreReading, { x: width * 0.68, y: height * 0.415, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+
+                // Total Skor
+                page.drawText(totalScore, { x: width * 0.68, y: height * 0.375, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+
+                // Unduh File PDF
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Sertifikat_HSK_2_${studentName.replace(/\s+/g, '_')}.pdf`;
+                link.click();
+            } catch (error) {
+                console.error("Gagal membuat sertifikat:", error);
+                alert("Gagal mengunduh sertifikat. Pastikan file 'certificate-bg.jpg' ada di repository GitHub Anda.");
+            }
         }
     </script>
 </body>
