@@ -441,10 +441,10 @@
         // FUNGSI MEMBUAT DAN MENGUNDUH SERTIFIKAT PDF
         async function downloadCertificate() {
             try {
-                // Ambil file template dari repository GitHub
-                const url = 'certificate-template.pdf';
+                // Mendukung pemanggilan nama file 'Report HSK 2.pdf'
+                const url = 'Report%20HSK%202.pdf';
                 const existingPdfBytes = await fetch(url).then(res => {
-                    if (!res.ok) throw new Error("File certificate-template.pdf tidak ditemukan di GitHub");
+                    if (!res.ok) throw new Error("File 'Report HSK 2.pdf' tidak ditemukan di GitHub");
                     return res.arrayBuffer();
                 });
 
@@ -465,32 +465,27 @@
                 const day = String(today.getDate()).padStart(2, '0');
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
-                // Tulis Identitas dan Nilai pada Koordinat Template Sertifikat HSK 2
-                firstPage.drawText(name, { x: 125, y: 462, size: 10, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(gender, { x: 125, y: 442, size: 10, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(nationality, { x: 125, y: 422, size: 10, color: PDFLib.rgb(0, 0, 0) });
-                
-                firstPage.drawText(year, { x: 125, y: 395, size: 10, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(month, { x: 175, y: 395, size: 10, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(day, { x: 205, y: 395, size: 10, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(randomNo, { x: 125, y: 375, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                // ==============================================================
+                // KOORDINAT PRESISI SESUAI NOMOR PETUNJUK GAMBAR
+                // ==============================================================
 
-                // Nilai Ujian
-                firstPage.drawText(scoreListening, { x: 280, y: 310, size: 11, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(scoreReading, { x: 280, y: 285, size: 11, color: PDFLib.rgb(0, 0, 0) });
-                firstPage.drawText(totalScore, { x: 280, y: 260, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                // 1. Nama (Name)
+                firstPage.drawText(name, { x: 125, y: 412, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `Sertifikat_HSK_2_${studentName.replace(/\s+/g, '_')}.pdf`;
-                link.click();
-            } catch (error) {
-                console.error("Gagal membuat sertifikat:", error);
-                alert("Gagal mengunduh sertifikat. Pastikan file 'certificate-template.pdf' sudah di-upload ke GitHub Anda.");
-            }
-        }
-    </script>
-</body>
-</html>
+                // 2. Jenis Kelamin (Gender)
+                firstPage.drawText(gender, { x: 115, y: 390, size: 10, color: PDFLib.rgb(0, 0, 0) });
+
+                // 3. Kewarganegaraan (Nationality)
+                firstPage.drawText(nationality, { x: 235, y: 390, size: 10, color: PDFLib.rgb(0, 0, 0) });
+
+                // 4. Tahun (Year)
+                firstPage.drawText(year, { x: 175, y: 368, size: 10, color: PDFLib.rgb(0, 0, 0) });
+
+                // 5. Bulan (Month)
+                firstPage.drawText(month, { x: 242, y: 368, size: 10, color: PDFLib.rgb(0, 0, 0) });
+
+                // 6. Hari / Tanggal (Day)
+                firstPage.drawText(day, { x: 300, y: 368, size: 10, color: PDFLib.rgb(0, 0, 0) });
+
+                // Nomor Sertifikat (No.)
+                firstPage.drawText(randomNo, { x: 115, y: 346
