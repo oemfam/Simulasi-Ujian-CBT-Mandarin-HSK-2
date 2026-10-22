@@ -221,10 +221,30 @@
                 return;
             }
 
+            // ==========================================
+            // FITUR PRELOAD GAMBAR AGAR TANPA LOADING
+            // ==========================================
+            questions.forEach(q => {
+                [q.imageurl, q.imageUrl, q.imageurl2, q.imageUrl2].forEach(imgUrl => {
+                    if (imgUrl && imgUrl.trim() !== "") {
+                        let finalUrl = imgUrl;
+                        if (imgUrl.includes("google.com") || imgUrl.includes("googleusercontent.com")) {
+                            let fileIdMatch = imgUrl.match(/[-\w]{25,}/);
+                            if (fileIdMatch) {
+                                finalUrl = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
+                            }
+                        }
+                        const preloadImg = new Image();
+                        preloadImg.src = finalUrl;
+                    }
+                });
+            });
+            // ==========================================
+
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('exam-screen').classList.remove('hidden');
             document.getElementById('timer-box').classList.remove('hidden');
-            document.getElementById('master-audio-container').classList.remove('hidden');
+            document.getElementById('master-audio-container').classList.add('hidden'); // Sesuaikan jika audio di atas
 
             let masterAudio = document.getElementById('global-audio');
             if (masterAudio) {
