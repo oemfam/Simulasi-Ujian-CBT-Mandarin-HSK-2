@@ -10,21 +10,17 @@
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between select-none" oncopy="return false" oncut="return false" onpaste="return false">
 
-    <!-- Header / Navbar + Audio Master Terkunci di Atas -->
+    <!-- Header / Navbar + Audio Tersembunyi -->
     <header class="bg-red-700 text-white shadow-md p-4 sticky top-0 z-50 flex flex-col md:flex-row justify-between items-center gap-3">
         <div>
             <h1 class="font-bold text-base">Ujian CBT Mandarin HSK 2</h1>
             <span id="question-tracker" class="text-xs text-red-200">Memuat soal...</span>
         </div>
 
-        <!-- AUDIO MASTER (1 Audio untuk semua soal Listening) -->
-        <div id="master-audio-container" class="hidden bg-red-800 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-red-600">
-            <span class="text-xs font-semibold whitespace-nowrap">🔊 Audio Listening (1-35):</span>
-            <audio id="global-audio" controls controlsList="nodownload" class="h-8 w-60 md:w-64">
-                <source src="https://raw.githubusercontent.com/oemfam/Simulasi-Ujian-CBT-Mandarin-HSK-2/main/level-2%20mp3.mp3" type="audio/mpeg">
-                Browser Anda tidak mendukung audio.
-            </audio>
-        </div>
+        <!-- AUDIO TERSEMBUNYI (Langsung berputar otomatis tanpa kontrol agar peserta tidak bisa pause) -->
+        <audio id="global-audio" class="hidden">
+            <source src="https://raw.githubusercontent.com/oemfam/Simulasi-Ujian-CBT-Mandarin-HSK-2/main/level-2%20mp3.mp3" type="audio/mpeg">
+        </audio>
 
         <div id="timer-box" class="hidden bg-red-900 px-3 py-1 rounded font-mono text-sm whitespace-nowrap">
             Sisa Waktu: <span id="time-left" class="font-bold">55:00</span>
@@ -53,8 +49,8 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Jenis Kelamin (Gender)</label>
                     <select id="student-gender" class="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
-                        <option value="Laki-laki">Laki-laki (男 / Male)</option>
-                        <option value="Perempuan">Perempuan (女 / Female)</option>
+                        <option value="Laki-laki">Laki-laki (Male)</option>
+                        <option value="Perempuan">Perempuan (Female)</option>
                     </select>
                 </div>
 
@@ -135,31 +131,6 @@
         let timeLeft = 55 * 60; // 55 Menit
         let violationCount = 0;
 
-        let lastPlayedTime = 0;
-        const masterAudio = document.getElementById('global-audio');
-
-        if (masterAudio) {
-            masterAudio.addEventListener('seeking', function() {
-                const delta = Math.abs(masterAudio.currentTime - lastPlayedTime);
-                if (delta > 1) {
-                    masterAudio.currentTime = lastPlayedTime;
-                }
-            });
-
-            masterAudio.addEventListener('timeupdate', function() {
-                if (!masterAudio.seeking) {
-                    lastPlayedTime = masterAudio.currentTime;
-                }
-            });
-
-            masterAudio.addEventListener('pause', function() {
-                let examScreen = document.getElementById('exam-screen');
-                if (examScreen && !examScreen.classList.contains('hidden')) {
-                    masterAudio.play().catch(e => {});
-                }
-            });
-        }
-
         document.addEventListener("visibilitychange", function() {
             if (document.hidden && !document.getElementById('exam-screen').classList.contains('hidden')) {
                 violationCount++;
@@ -221,9 +192,7 @@
                 return;
             }
 
-            // ==========================================
-            // FITUR PRELOAD GAMBAR AGAR TANPA LOADING
-            // ==========================================
+            // Preload gambar agar saat pindah soal tidak ada jeda/loading
             questions.forEach(q => {
                 [q.imageurl, q.imageUrl, q.imageurl2, q.imageUrl2].forEach(imgUrl => {
                     if (imgUrl && imgUrl.trim() !== "") {
@@ -239,18 +208,15 @@
                     }
                 });
             });
-            // ==========================================
 
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('exam-screen').classList.remove('hidden');
             document.getElementById('timer-box').classList.remove('hidden');
-            document.getElementById('master-audio-container').classList.add('hidden'); // Sesuaikan jika audio di atas
 
             let masterAudio = document.getElementById('global-audio');
             if (masterAudio) {
-                masterAudio.load();
                 masterAudio.play().catch(error => {
-                    console.log("Autoplay dicegah oleh browser.");
+                    console.log("Autoplay audio dicegah browser.");
                 });
             }
 
@@ -309,29 +275,29 @@
 
             let html = `<p class="text-lg font-medium text-slate-800 mb-4">${currentIndex + 1}. ${q.pertanyaan || ""}</p>`;
 
-            // Render Gambar Utama (Gambar 1)
-        let imgLink = q.imageurl || q.imageUrl || "";
-        if (imgLink && imgLink.trim() !== "") {
-            if (imgLink.includes("google.com") || imgLink.includes("googleusercontent.com")) {
-                let fileIdMatch = imgLink.match(/[-\w]{25,}/);
-                if (fileIdMatch) {
-                    imgLink = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
+            // Gambar 1
+            let imgLink = q.imageurl || q.imageUrl || "";
+            if (imgLink && imgLink.trim() !== "") {
+                if (imgLink.includes("google.com") || imgLink.includes("googleusercontent.com")) {
+                    let fileIdMatch = imgLink.match(/[-\w]{25,}/);
+                    if (fileIdMatch) {
+                        imgLink = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
+                    }
                 }
+                html += `<div class="mb-3"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
             }
-            html += `<div class="mb-3"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
-        }
 
-        // Render Gambar Kedua (Gambar 2) jika ada
-        let imgLink2 = q.imageurl2 || q.imageUrl2 || "";
-        if (imgLink2 && imgLink2.trim() !== "") {
-            if (imgLink2.includes("google.com") || imgLink2.includes("googleusercontent.com")) {
-                let fileIdMatch2 = imgLink2.match(/[-\w]{25,}/);
-                if (fileIdMatch2) {
-                    imgLink2 = `https://lh3.googleusercontent.com/d/${fileIdMatch2[0]}`;
+            // Gambar 2
+            let imgLink2 = q.imageurl2 || q.imageUrl2 || "";
+            if (imgLink2 && imgLink2.trim() !== "") {
+                if (imgLink2.includes("google.com") || imgLink2.includes("googleusercontent.com")) {
+                    let fileIdMatch2 = imgLink2.match(/[-\w]{25,}/);
+                    if (fileIdMatch2) {
+                        imgLink2 = `https://lh3.googleusercontent.com/d/${fileIdMatch2[0]}`;
+                    }
                 }
+                html += `<div class="mb-4"><img src="${imgLink2}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
             }
-            html += `<div class="mb-4"><img src="${imgLink2}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
-        }
 
             let options = ['A', 'B', 'C', 'D', 'E', 'F'];
             html += `<div class="space-y-2">`;
@@ -451,14 +417,13 @@
             })
             .then(res => res.json())
             .then(res => {
-                document.getElementById('master-audio-container').classList.add('hidden');
                 document.getElementById('exam-screen').classList.add('hidden');
                 document.getElementById('timer-box').classList.add('hidden');
                 document.getElementById('result-screen').classList.remove('hidden');
                 
                 document.getElementById('final-score').innerText = res.skorTotal || totalScore;
                 document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
-                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.scoreReading : finalReading) + " / 100";
+                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.skorReading : finalReading) + " / 100";
                 
                 let badge = document.getElementById('passing-badge');
                 if ((res.skorTotal || totalScore) >= 120) {
@@ -475,41 +440,23 @@
             });
         }
 
-        // FUNGSI UTAMA GENERASI SERTIFIKAT PDF PRESISI
         async function downloadCertificate() {
             try {
-                // Memanggil file gambar sertifikat dari GitHub Anda
                 const imgUrl = 'certificate-bg.jpg';
                 const imgBytes = await fetch(imgUrl).then(res => {
                     if (!res.ok) throw new Error("File 'certificate-bg.jpg' tidak ditemukan di GitHub");
                     return res.arrayBuffer();
                 });
 
-                // Buat Dokumen PDF Baru Sesuai Ukuran Gambar Sertifikat
                 const pdfDoc = await PDFLib.PDFDocument.create();
                 const image = await pdfDoc.embedJpg(imgBytes);
-                
-                // Ambil Dimensi Asli Gambar
                 const page = pdfDoc.addPage([image.width, image.height]);
                 const { width, height } = page.getSize();
 
-                // Gambar Latar Belakang Sertifikat Seluas Halaman
-                page.drawImage(image, {
-                    x: 0,
-                    y: 0,
-                    width: width,
-                    height: height,
-                });
+                page.drawImage(image, { x: 0, y: 0, width: width, height: height });
 
-                // Ambil Data Nilai dan Biodata
                 const name = studentName.toUpperCase();
-                
-                // GENDER: Male / Female
-                let genderCert = "Male";
-                if (studentGender.toLowerCase().includes("perempuan") || studentGender.toLowerCase().includes("female") || studentGender.includes("女")) {
-                    genderCert = "Female";
-                }
-
+                let genderCert = studentGender.toLowerCase().includes("perempuan") ? "Female" : "Male";
                 const nationality = studentNationality.toUpperCase();
                 const scoreListening = document.getElementById('score-listening').innerText.split(" ")[0];
                 const scoreReading = document.getElementById('score-reading').innerText.split(" ")[0];
@@ -521,44 +468,18 @@
                 const day = String(today.getDate()).padStart(2, '0');
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
-                // ==============================================================
-                // KOORDINAT PENYESUAIAN PRESISI FINAL (DIKOREKSI DARI FOTO CATATAN)
-                // ==============================================================
-
-                // 1. Nama (Name) - Digeser ke kanan (x: 0.28) agar tidak menimpa Name
                 page.drawText(name, { x: width * 0.28, y: height * 0.672, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
-
-                // 2. Jenis Kelamin (Gender) - Digeser ke kanan (x: 0.28) agar tidak menimpa Gender
                 page.drawText(genderCert, { x: width * 0.28, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
-
-                // 3. Kewarganegaraan (Nationality) - Diturunkan sedikit agar pas di atas garis
                 page.drawText(nationality, { x: width * 0.54, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
-
-                // 4. Tahun (Year) - x: 0.395 (pas)
                 page.drawText(year, { x: width * 0.395, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
-
-                // 5. Bulan (Month) - Digeser ke kanan (x: 0.58) agar tidak menimpa 月
                 page.drawText(month, { x: width * 0.58, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
-
-                // 6. Hari (Day) - Digeser ke kanan (x: 0.72) agar tidak menimpa 日
                 page.drawText(day, { x: width * 0.72, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
-
-                // Nomor Sertifikat (No.) - Digeser ke kanan (x: 0.28) agar tidak menimpa No.
                 page.drawText(randomNo, { x: width * 0.28, y: height * 0.548, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // ==============================================================
-                // TABEL SKOR NILAI (DINAIKKAN/Y-AXIS DIURUTKAN ULANG)
-                // ==============================================================
-                // Skor Listening (Dinaikkan dari 0.443 -> 0.455)
                 page.drawText(scoreListening, { x: width * 0.68, y: height * 0.455, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
-
-                // Skor Reading (Dinaikkan dari 0.403 -> 0.418)
                 page.drawText(scoreReading, { x: width * 0.68, y: height * 0.418, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
-
-                // Total Skor (Dinaikkan dari 0.363 -> 0.380)
                 page.drawText(totalScore, { x: width * 0.68, y: height * 0.380, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
-                // Unduh File PDF
                 const pdfBytes = await pdfDoc.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
