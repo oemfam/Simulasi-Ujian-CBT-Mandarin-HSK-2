@@ -470,41 +470,41 @@
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
                 // ==============================================================
-                // KOORDINAT BARU YANG SUDAH DISESUAIKAN AGAR PAS DI GARIS ISIAN
+                // KOORDINAT FINAL PRESISI (Akurat sesuai garis formulir PDF Anda)
                 // ==============================================================
 
-                // 1. Nama (Name) - Di sebelah kanan tulisan "姓名 (Name) :"
-                firstPage.drawText(name, { x: 165, y: 508, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                // 1. Nama (Name)
+                firstPage.drawText(name, { x: 125, y: 318, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
-                // 2. Jenis Kelamin (Gender) - Di sebelah kanan tulisan "性别 (Gender) :"
-                firstPage.drawText(gender, { x: 165, y: 485, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                // 2. Jenis Kelamin (Gender)
+                firstPage.drawText(gender, { x: 115, y: 295, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
-                // 3. Kewarganegaraan (Nationality) - Di sebelah kanan tulisan "国籍 (Nationality) :"
-                firstPage.drawText(nationality, { x: 330, y: 485, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                // 3. Kewarganegaraan (Nationality)
+                firstPage.drawText(nationality, { x: 260, y: 295, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
                 // 4. Tahun (Year)
-                firstPage.drawText(year, { x: 405, y: 462, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(year, { x: 260, y: 272, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
                 // 5. Bulan (Month)
-                firstPage.drawText(month, { x: 480, y: 462, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(month, { x: 345, y: 272, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
                 // 6. Hari / Tanggal (Day)
-                firstPage.drawText(day, { x: 535, y: 462, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(day, { x: 410, y: 272, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
-                // Nomor Sertifikat (No.) - Di bawah baris tanggal
-                firstPage.drawText(randomNo, { x: 180, y: 438, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                // Nomor Sertifikat (No.)
+                firstPage.drawText(randomNo, { x: 115, y: 248, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
                 // ==============================================================
-                // TABEL SKOR NILAI (KOLOM "你的分数 / Your Score")
+                // TABEL SKOR NILAI (KOLOM "Your Score")
                 // ==============================================================
-                // Skor Listening (Baris pertama tabel nilai)
-                firstPage.drawText(scoreListening, { x: 495, y: 382, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                // Skor Listening
+                firstPage.drawText(scoreListening, { x: 360, y: 175, size: 11, color: PDFLib.rgb(0, 0, 0) });
 
-                // Skor Reading (Baris kedua tabel nilai)
-                firstPage.drawText(scoreReading, { x: 495, y: 355, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                // Skor Reading
+                firstPage.drawText(scoreReading, { x: 360, y: 150, size: 11, color: PDFLib.rgb(0, 0, 0) });
 
-                // Total Skor (Baris ketiga tabel nilai)
-                firstPage.drawText(totalScore, { x: 495, y: 328, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                // Total Skor
+                firstPage.drawText(totalScore, { x: 360, y: 125, size: 11, color: PDFLib.rgb(0, 0, 0) });
 
                 // Unduh File PDF
                 const pdfBytes = await pdfDoc.save();
