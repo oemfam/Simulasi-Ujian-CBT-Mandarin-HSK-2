@@ -144,6 +144,14 @@
                     lastPlayedTime = masterAudio.currentTime;
                 }
             });
+
+            // Mencegah audio di-pause saat ujian berlangsung
+            masterAudio.addEventListener('pause', function() {
+                let examScreen = document.getElementById('exam-screen');
+                if (examScreen && !examScreen.classList.contains('hidden')) {
+                    masterAudio.play().catch(e => {});
+                }
+            });
         }
 
         document.addEventListener("visibilitychange", function() {
@@ -282,13 +290,11 @@
                 html += `<div class="mb-4"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
             }
 
-            // Opsi pilihan fleksibel (Mendukung opsiA/opsia/OpsiA dan kolom Benar/Salah)
             let options = ['A', 'B', 'C', 'D', 'E', 'F'];
             html += `<div class="space-y-2">`;
             
             let hasOption = false;
             options.forEach(opt => {
-                // Cek berbagai variasi penamaan kolom opsi di Google Sheets
                 let optVal = q['opsi' + opt] || q['opsi' + opt.toLowerCase()] || q['Opsi' + opt] || q[opt] || "";
                 if (optVal && String(optVal).trim() !== "") {
                     hasOption = true;
@@ -302,19 +308,14 @@
                 }
             });
 
-            // Fallback otomatis jika di Google Sheets kolomnya dinamai langsung "Benar" dan "Salah"
             if (!hasOption) {
                 ['Benar', 'Salah'].forEach((val, idx) => {
                     let optLetter = idx === 0 ? 'A' : 'B';
-                    // Cek apakah ada nilai di kolom benar/salah pada data soal
-                    let valCheck = q[val.toLowerCase()] || q[val] || (idx === 0 ? q.opsia : q.opsib);
-                    // Jika di spreadsheet kolomnya standar "Benar" dan "Salah"
-                    let displayVal = val; 
                     let isChecked = userAnswers[currentIndex] === optLetter ? 'checked' : '';
                     html += `
                         <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition">
                             <input type="radio" name="option" value="${optLetter}" ${isChecked} onclick="saveAnswer('${optLetter}')" class="h-4 w-4 text-red-600 focus:ring-red-500 border-slate-300">
-                            <span class="ml-3 text-slate-700 font-medium">${optLetter}. ${displayVal}</span>
+                            <span class="ml-3 text-slate-700 font-medium">${optLetter}. ${val}</span>
                         </label>
                     `;
                 });
@@ -414,7 +415,7 @@
                 
                 document.getElementById('final-score').innerText = res.skorTotal || totalScore;
                 document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
-                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.skorReading : finalReading) + " / 100";
+                document.getElementById('score-reading').innerText = (res.scoreReading !== undefined ? res.scoreReading : finalReading) + " / 100";
                 
                 let badge = document.getElementById('passing-badge');
                 if ((res.skorTotal || totalScore) >= 120) {
