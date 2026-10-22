@@ -18,7 +18,6 @@
         <!-- AUDIO MASTER (1 Audio untuk semua soal Listening) -->
         <div id="master-audio-container" class="hidden bg-red-800 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-red-600">
             <span class="text-xs font-semibold whitespace-nowrap">🔊 Audio Listening (1-35):</span>
-            <!-- GANTI LINK DI BAWAH INI DENGAN LINK AUDIO MASTER ANDA -->
             <audio id="global-audio" controls class="h-8 w-60 md:w-64">
                 <source src="https://docs.google.com/uc?export=download&id=1MJfRCIueclRMy5dR7YQhaI6upRPxRyHb" type="audio/mpeg">
                 Browser Anda tidak mendukung audio.
@@ -60,7 +59,7 @@
                 <div class="bg-amber-50 border-l-4 border-amber-500 p-3 text-xs text-amber-700">
                     Peringatan: Dilarang membuka tab lain atau meninggalkan halaman ujian. Sistem mendeteksi perpindahan tab secara otomatis!
                 </div>
-                <button onclick="initializeExam()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition duration-200">Mulai Ujian</button>
+                <button onclick="initializeExam()" id="start-btn" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition duration-200 disabled:opacity-50">Memuat Sistem...</button>
             </div>
         </div>
 
@@ -69,6 +68,12 @@
             <div class="flex justify-between items-center border-b pb-3 mb-4">
                 <span id="question-label" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Listening</span>
                 <span id="question-type" class="bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded">Bagian 1</span>
+            </div>
+
+            <!-- Kotak Contoh Soal / Petunjuk Per Bagian -->
+            <div id="contoh-box" class="hidden mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg text-sm text-blue-900">
+                <p class="font-bold mb-1">📌 Petunjuk / Contoh Soal (<span id="contoh-bagian-label"></span>):</p>
+                <div id="contoh-content"></div>
             </div>
 
             <div id="question-container" class="mb-6"></div>
@@ -106,11 +111,15 @@
     </main>
 
     <footer class="text-center py-4 text-xs text-slate-500">
-        Sistem CBT Standar HSK &copy; 2026
+        Sistem CBT Standar HSK &copy; 2026 OemFAM x BELAJARO
     </footer>
 
     <script>
+        // URL Web App Google Apps Script Anda yang terhubung ke Google Sheets
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUCa1pkbUgsIsWM3zf86nkXFjoi568GKhBbvzKlwrFuIGagw8wLgFaDNVCDtdA93Fu/exec";
+
         let questions = [];
+        let petunjukList = {};
         let currentIndex = 0;
         let userAnswers = {};
         let studentName = "";
@@ -133,6 +142,41 @@
 
         document.addEventListener('contextmenu', event => event.preventDefault());
 
+        // Ambil data soal otomatis saat halaman dibuka via fetch API
+        window.onload = function() {
+            fetch(SCRIPT_URL)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'not_started' || res.status === 'ended') {
+                        document.getElementById('login-title').innerText = "Akses Ujian Ditutup";
+                        document.getElementById('login-desc').innerText = res.message;
+                        document.getElementById('form-container').innerHTML = `<div class="bg-red-50 text-red-700 p-3 rounded-lg text-sm text-center font-medium">${res.message}</div>`;
+                        return;
+                    }
+
+                    let rawData = res.questions;
+                    questions = [];
+                    petunjukList = {};
+
+                    rawData.forEach((q) => {
+                        if (String(q.id).toUpperCase() === 'CONTOH') {
+                            petunjukList[q.bagian] = q;
+                        } else {
+                            questions.push(q);
+                        }
+                    });
+
+                    document.getElementById('question-tracker').innerText = "Siap Ujian";
+                    let startBtn = document.getElementById('start-btn');
+                    startBtn.disabled = false;
+                    startBtn.innerText = "Mulai Ujian";
+                })
+                .catch(err => {
+                    console.error("Gagal memuat soal:", err);
+                    document.getElementById('question-tracker').innerText = "Gagal memuat koneksi data!";
+                });
+        };
+
         function initializeExam() {
             studentName = document.getElementById('student-name').value.trim();
             studentNationality = document.getElementById('student-nationality').value.trim();
@@ -143,93 +187,21 @@
                 return;
             }
 
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    if (res.status === 'not_started' || res.status === 'ended') {
-                        document.getElementById('login-title').innerText = "Akses Ujian Ditutup";
-                        document.getElementById('login-desc').innerText = res.message;
-                        document.getElementById('form-container').innerHTML = `<div class="bg-red-50 text-red-700 p-3 rounded-lg text-sm text-center font-medium">${res.message}</div>`;
-                        return;
-                    }
-// ==========================================
-        // LETAKKAN KODE PENYARINGAN CONTOH DI SINI:
-        // ==========================================
-        let rawData = res.questions;
-        questions = [];
-        let petunjukList = {};
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('exam-screen').classList.remove('hidden');
+            document.getElementById('timer-box').classList.remove('hidden');
+            document.getElementById('master-audio-container').classList.remove('hidden');
 
-        rawData.forEach((q) => {
-            if (String(q.id).toUpperCase() === 'CONTOH') {
-                petunjukList[q.bagian] = q;
-            } else {
-                questions.push(q);
-            }
-        });
-        // ==========================================
-
-        // Sembunyikan login, tampilkan layar ujian
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('exam-screen').classList.remove('hidden');
-                    document.getElementById('timer-box').classList.remove('hidden');
-                    document.getElementById('master-audio-container').classList.remove('hidden');
-                    
-                    function renderQuestion() {
-            if (questions.length === 0) return;
-            let q = questions[currentIndex];
-            
-            // Total soal sekarang bersih 60 soal (tanpa menghitung baris contoh)
-            document.getElementById('question-tracker').innerText = `Soal ${currentIndex + 1} dari ${questions.length}`;
-            document.getElementById('question-label').innerText = q.tipe;
-            document.getElementById('question-type').innerText = q.bagian;
-
-            let html = `<p class="text-lg font-medium text-slate-800 mb-4">${currentIndex + 1}. ${q.pertanyaan}</p>`;
-
-            // Ambil data link gambar dari kolom (mendukung huruf kecil/besar)
-            let imgLink = q.imageurl || q.imageUrl || "";
-            
-            if (imgLink && imgLink.trim() !== "") {
-                // Konversi otomatis link Google Drive atau lh3 agar menjadi direct image link
-                if (imgLink.includes("google.com") || imgLink.includes("googleusercontent.com")) {
-                    let fileIdMatch = imgLink.match(/[-\w]{25,}/);
-                    if (fileIdMatch) {
-                        imgLink = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
-                    }
-                }
-                html += `<div class="mb-4"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
+            let masterAudio = document.getElementById('global-audio');
+            if (masterAudio) {
+                masterAudio.load();
+                masterAudio.play().catch(error => {
+                    console.log("Autoplay dicegah oleh browser, peserta perlu menekan play manual.");
+                });
             }
 
-            // Opsi pilihan sampai F
-            let options = ['A', 'B', 'C', 'D', 'E', 'F'];
-            html += `<div class="space-y-2">`;
-            options.forEach(opt => {
-                let optKey = 'opsi' + opt;
-                if (q[optKey] && q[optKey].trim() !== "") {
-                    let isChecked = userAnswers[currentIndex] === opt ? 'checked' : '';
-                    html += `
-                        <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition">
-                            <input type="radio" name="option" value="${opt}" ${isChecked} onclick="saveAnswer('${opt}')" class="h-4 w-4 text-red-600 focus:ring-red-500 border-slate-300">
-                            <span class="ml-3 text-slate-700 font-medium">${opt}. ${q[optKey]}</span>
-                        </label>
-                    `;
-                }
-            });
-            html += `</div>`;
-
-            document.getElementById('question-container').innerHTML = html;
-
-            document.getElementById('btn-prev').disabled = currentIndex === 0;
-            let nextBtn = document.getElementById('btn-next');
-            if (currentIndex === questions.length - 1) {
-                nextBtn.innerText = "Kirim Ujian";
-                nextBtn.setAttribute("onclick", "confirmSubmit()");
-            } else {
-                nextBtn.innerText = "Selanjutnya";
-                nextBtn.setAttribute("onclick", "nextQuestion()");
-            }
-        }
-                    startTimer();
-                })
-                .getExamInitialization();
+            renderQuestion();
+            startTimer();
         }
 
         function startTimer() {
@@ -256,10 +228,44 @@
             document.getElementById('question-label').innerText = q.tipe;
             document.getElementById('question-type').innerText = q.bagian;
 
+            let contohBox = document.getElementById('contoh-box');
+            let isFirstOfSection = questions.findIndex(item => item.bagian === q.bagian) === currentIndex;
+
+            if (petunjukList[q.bagian] && isFirstOfSection) {
+                let p = petunjukList[q.bagian];
+                let pHtml = `<p class="mb-2">${p.pertanyaan}</p>`;
+                
+                // Konversi gambar petunjuk/contoh jika ada
+                let pImg = p.imageurl || p.imageUrl || "";
+                if (pImg && pImg.trim() !== "") {
+                    if (pImg.includes("google.com") || pImg.includes("googleusercontent.com")) {
+                        let fileIdMatch = pImg.match(/[-\w]{25,}/);
+                        if (fileIdMatch) {
+                            pImg = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
+                        }
+                    }
+                    pHtml += `<div class="mb-2"><img src="${pImg}" class="max-h-36 rounded border mx-auto object-contain bg-white"></div>`;
+                }
+
+                document.getElementById('contoh-bagian-label').innerText = q.bagian;
+                document.getElementById('contoh-content').innerHTML = pHtml;
+                contohBox.classList.remove('hidden');
+            } else {
+                contohBox.classList.add('hidden');
+            }
+
             let html = `<p class="text-lg font-medium text-slate-800 mb-4">${currentIndex + 1}. ${q.pertanyaan}</p>`;
 
-            if (q.imageUrl && q.imageUrl.trim() !== "") {
-                html += `<div class="mb-4"><img src="${q.imageUrl}" class="max-h-48 rounded border mx-auto object-contain"></div>`;
+            // Ambil data link gambar soal dan konversi otomatis agar muncul di GitHub Pages
+            let imgLink = q.imageurl || q.imageUrl || "";
+            if (imgLink && imgLink.trim() !== "") {
+                if (imgLink.includes("google.com") || imgLink.includes("googleusercontent.com")) {
+                    let fileIdMatch = imgLink.match(/[-\w]{25,}/);
+                    if (fileIdMatch) {
+                        imgLink = `https://lh3.googleusercontent.com/d/${fileIdMatch[0]}`;
+                    }
+                }
+                html += `<div class="mb-4"><img src="${imgLink}" class="max-h-48 rounded border mx-auto object-contain bg-white"></div>`;
             }
 
             // Opsi pilihan sampai F
@@ -319,7 +325,6 @@
         function submitExamData() {
             clearInterval(timerInterval);
             
-            // Hentikan audio master jika peserta selesai/waktu habis
             let masterAudio = document.getElementById('global-audio');
             if(masterAudio) masterAudio.pause();
             
@@ -328,11 +333,7 @@
             let countListening = 0;
             let countReading = 0;
 
-            // Perhitungan Skor Otomatis (Hanya menghitung soal yang bukan contoh)
             questions.forEach((q, idx) => {
-                // Jika id bertuliskan CONTOH, lewati (tidak dihitung nilai)
-                if (String(q.id).toUpperCase() === 'CONTOH') return;
-
                 let isCorrect = (userAnswers[idx] && userAnswers[idx].trim().toUpperCase() === q.kunci.trim().toUpperCase());
                 let tipeLower = q.tipe.toLowerCase();
                 
@@ -363,27 +364,35 @@
 
             document.getElementById('exam-screen').innerHTML = `<div class="text-center py-10"><p class="text-lg font-medium text-slate-600">Menghitung dan mengirim nilai ke sistem...</p></div>`;
 
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    document.getElementById('master-audio-container').classList.add('hidden');
-                    document.getElementById('exam-screen').classList.add('hidden');
-                    document.getElementById('timer-box').classList.add('hidden');
-                    document.getElementById('result-screen').classList.remove('hidden');
-                    
-                    document.getElementById('final-score').innerText = res.skorTotal;
-                    document.getElementById('score-listening').innerText = res.skorListening + " / 100";
-                    document.getElementById('score-reading').innerText = res.skorReading + " / 100";
-                    
-                    let badge = document.getElementById('passing-badge');
-                    if (res.skorTotal >= 120) {
-                        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800";
-                        badge.innerText = "Status: LULUS (Min. 120)";
-                    } else {
-                        badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800";
-                        badge.innerText = "Status: TIDAK LULUS (Min. 120)";
-                    }
-                })
-                .submitExam(payload);
+            // Kirim data hasil ujian ke Google Sheets via fetch POST
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(res => {
+                document.getElementById('master-audio-container').classList.add('hidden');
+                document.getElementById('exam-screen').classList.add('hidden');
+                document.getElementById('timer-box').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                
+                document.getElementById('final-score').innerText = res.skorTotal || totalScore;
+                document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
+                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.skorReading : finalReading) + " / 100";
+                
+                let badge = document.getElementById('passing-badge');
+                if ((res.skorTotal || totalScore) >= 120) {
+                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800";
+                    badge.innerText = "Status: LULUS (Min. 120)";
+                } else {
+                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800";
+                    badge.innerText = "Status: TIDAK LULUS (Min. 120)";
+                }
+            })
+            .catch(err => {
+                console.error("Gagal kirim data:", err);
+                alert("Terjadi kesalahan saat mengirim jawaban, namun data Anda tetap diproses.");
+            });
         }
     </script>
 </body>
