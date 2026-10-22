@@ -446,7 +446,7 @@
         // FUNGSI MEMBUAT DAN MENGUNDUH SERTIFIKAT PDF
         async function downloadCertificate() {
             try {
-                const url = 'Report%20HSK%202.pdf';
+                const url = 'certificate-template.pdf';
                 const existingPdfBytes = await fetch(url).then(res => {
                     if (!res.ok) throw new Error("File 'Report HSK 2.pdf' tidak ditemukan di GitHub");
                     return res.arrayBuffer();
