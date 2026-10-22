@@ -61,7 +61,7 @@
                 <div class="bg-amber-50 border-l-4 border-amber-500 p-3 text-xs text-amber-700">
                     Peringatan: Dilarang membuka tab lain atau meninggalkan halaman ujian. Sistem mendeteksi perpindahan tab secara otomatis!
                 </div>
-                <button onclick="initializeExam()" id="start-btn" disabled class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition duration-200 disabled:opacity-50">Memuat Sistem...</button>
+                <button onclick="initializeExam()" id="start-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition duration-200">Mulai Ujian</button>
             </div>
         </div>
 
@@ -173,6 +173,7 @@
 
         document.addEventListener('contextmenu', event => event.preventDefault());
 
+        // Ambil data soal otomatis saat halaman dibuka
         window.onload = function() {
             fetch(SCRIPT_URL)
                 .then(res => res.json())
@@ -184,22 +185,21 @@
                         return;
                     }
 
-                    let rawData = res.questions;
+                    let rawData = res.questions || res;
                     questions = [];
                     petunjukList = {};
 
-                    rawData.forEach((q) => {
-                        if (String(q.id).toUpperCase() === 'CONTOH') {
-                            petunjukList[q.bagian] = q;
-                        } else {
-                            questions.push(q);
-                        }
-                    });
+                    if (Array.isArray(rawData)) {
+                        rawData.forEach((q) => {
+                            if (q && q.id && String(q.id).toUpperCase() === 'CONTOH') {
+                                petunjukList[q.bagian] = q;
+                            } else if (q) {
+                                questions.push(q);
+                            }
+                        });
+                    }
 
-                    document.getElementById('question-tracker').innerText = "Siap Ujian";
-                    let startBtn = document.getElementById('start-btn');
-                    startBtn.disabled = false;
-                    startBtn.innerText = "Mulai Ujian";
+                    document.getElementById('question-tracker').innerText = `Total Soal: ${questions.length}`;
                 })
                 .catch(err => {
                     console.error("Gagal memuat soal:", err);
@@ -217,6 +217,11 @@
                 return;
             }
 
+            if (questions.length === 0) {
+                alert("Soal sedang dimuat atau koneksi ke Google Sheets bermasalah. Mohon tunggu 5 detik lalu coba klik 'Mulai Ujian' lagi.");
+                return;
+            }
+
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('exam-screen').classList.remove('hidden');
             document.getElementById('timer-box').classList.remove('hidden');
@@ -226,7 +231,7 @@
             if (masterAudio) {
                 masterAudio.load();
                 masterAudio.play().catch(error => {
-                    console.log("Autoplay dicegah oleh browser, peserta perlu menekan play manual.");
+                    console.log("Autoplay dicegah oleh browser.");
                 });
             }
 
@@ -255,8 +260,8 @@
             let q = questions[currentIndex];
             
             document.getElementById('question-tracker').innerText = `Soal ${currentIndex + 1} dari ${questions.length}`;
-            document.getElementById('question-label').innerText = q.tipe;
-            document.getElementById('question-type').innerText = q.bagian;
+            document.getElementById('question-label').innerText = q.tipe || "Ujian";
+            document.getElementById('question-type').innerText = q.bagian || "";
 
             let contohBox = document.getElementById('contoh-box');
             let isFirstOfSection = questions.findIndex(item => item.bagian === q.bagian) === currentIndex;
@@ -441,7 +446,6 @@
         // FUNGSI MEMBUAT DAN MENGUNDUH SERTIFIKAT PDF
         async function downloadCertificate() {
             try {
-                // Mendukung pemanggilan nama file 'Report HSK 2.pdf'
                 const url = 'Report%20HSK%202.pdf';
                 const existingPdfBytes = await fetch(url).then(res => {
                     if (!res.ok) throw new Error("File 'Report HSK 2.pdf' tidak ditemukan di GitHub");
@@ -465,27 +469,30 @@
                 const day = String(today.getDate()).padStart(2, '0');
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
-                // ==============================================================
-                // KOORDINAT PRESISI SESUAI NOMOR PETUNJUK GAMBAR
-                // ==============================================================
-
-                // 1. Nama (Name)
                 firstPage.drawText(name, { x: 125, y: 412, size: 10, color: PDFLib.rgb(0, 0, 0) });
-
-                // 2. Jenis Kelamin (Gender)
                 firstPage.drawText(gender, { x: 115, y: 390, size: 10, color: PDFLib.rgb(0, 0, 0) });
-
-                // 3. Kewarganegaraan (Nationality)
                 firstPage.drawText(nationality, { x: 235, y: 390, size: 10, color: PDFLib.rgb(0, 0, 0) });
-
-                // 4. Tahun (Year)
+                
                 firstPage.drawText(year, { x: 175, y: 368, size: 10, color: PDFLib.rgb(0, 0, 0) });
-
-                // 5. Bulan (Month)
                 firstPage.drawText(month, { x: 242, y: 368, size: 10, color: PDFLib.rgb(0, 0, 0) });
-
-                // 6. Hari / Tanggal (Day)
                 firstPage.drawText(day, { x: 300, y: 368, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(randomNo, { x: 115, y: 346, size: 10, color: PDFLib.rgb(0, 0, 0) });
 
-                // Nomor Sertifikat (No.)
-                firstPage.drawText(randomNo, { x: 115, y: 346
+                firstPage.drawText(scoreListening, { x: 285, y: 278, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(scoreReading, { x: 285, y: 255, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(totalScore, { x: 285, y: 232, size: 11, color: PDFLib.rgb(0, 0, 0) });
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Sertifikat_HSK_2_${studentName.replace(/\s+/g, '_')}.pdf`;
+                link.click();
+            } catch (error) {
+                console.error("Gagal membuat sertifikat:", error);
+                alert("Gagal mengunduh sertifikat. Pastikan file 'Report HSK 2.pdf' sudah ada di GitHub Anda.");
+            }
+        }
+    </script>
+</body>
+</html>
