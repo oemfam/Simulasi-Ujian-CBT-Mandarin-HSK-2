@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian CBT Mandarin HSK 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pustaka pdf-lib untuk mengisi data ke sertifikat PDF -->
+    <script src="https://unpkg.com/pdf-lib@1.4.0/dist/pdf-lib.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between select-none" oncopy="return false" oncut="return false" onpaste="return false">
 
@@ -84,7 +86,7 @@
             </div>
         </div>
 
-        <!-- Halaman Hasil Instan -->
+        <!-- Halaman Hasil Instan + Unduh Sertifikat -->
         <div id="result-screen" class="hidden bg-white p-6 rounded-xl shadow-lg text-center">
             <h2 class="text-2xl font-bold text-slate-800 mb-1">Ujian Selesai!</h2>
             <p class="text-sm font-semibold mb-4 text-slate-600">Hasil Ujian Anda Langsung Keluar</p>
@@ -106,7 +108,12 @@
                 </div>
             </div>
 
-            <button onclick="location.reload()" class="bg-slate-800 text-white px-6 py-2.5 rounded-lg font-medium text-sm">Tutup Halaman</button>
+            <div class="space-y-3">
+                <button onclick="downloadCertificate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition duration-200">
+                    📥 Unduh Sertifikat (PDF)
+                </button>
+                <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium text-sm">Tutup Halaman</button>
+            </div>
         </div>
     </main>
 
@@ -145,7 +152,6 @@
                 }
             });
 
-            // Mencegah audio di-pause saat ujian berlangsung
             masterAudio.addEventListener('pause', function() {
                 let examScreen = document.getElementById('exam-screen');
                 if (examScreen && !examScreen.classList.contains('hidden')) {
@@ -415,7 +421,7 @@
                 
                 document.getElementById('final-score').innerText = res.skorTotal || totalScore;
                 document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
-                document.getElementById('score-reading').innerText = (res.scoreReading !== undefined ? res.scoreReading : finalReading) + " / 100";
+                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.skorReading : finalReading) + " / 100";
                 
                 let badge = document.getElementById('passing-badge');
                 if ((res.skorTotal || totalScore) >= 120) {
@@ -430,6 +436,60 @@
                 console.error("Gagal kirim data:", err);
                 alert("Terjadi kesalahan saat mengirim jawaban, namun data Anda tetap diproses.");
             });
+        }
+
+        // FUNGSI MEMBUAT DAN MENGUNDUH SERTIFIKAT PDF
+        async function downloadCertificate() {
+            try {
+                // Ambil file template dari repository GitHub
+                const url = 'certificate-template.pdf';
+                const existingPdfBytes = await fetch(url).then(res => {
+                    if (!res.ok) throw new Error("File certificate-template.pdf tidak ditemukan di GitHub");
+                    return res.arrayBuffer();
+                });
+
+                const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+                const pages = pdfDoc.getPages();
+                const firstPage = pages[0];
+
+                const name = studentName.toUpperCase();
+                const gender = studentGender;
+                const nationality = studentNationality.toUpperCase();
+                const scoreListening = document.getElementById('score-listening').innerText.split(" ")[0];
+                const scoreReading = document.getElementById('score-reading').innerText.split(" ")[0];
+                const totalScore = document.getElementById('final-score').innerText;
+                
+                const today = new Date();
+                const year = String(today.getFullYear());
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
+
+                // Tulis Identitas dan Nilai pada Koordinat Template Sertifikat HSK 2
+                firstPage.drawText(name, { x: 125, y: 462, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(gender, { x: 125, y: 442, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(nationality, { x: 125, y: 422, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                
+                firstPage.drawText(year, { x: 125, y: 395, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(month, { x: 175, y: 395, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(day, { x: 205, y: 395, size: 10, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(randomNo, { x: 125, y: 375, size: 10, color: PDFLib.rgb(0, 0, 0) });
+
+                // Nilai Ujian
+                firstPage.drawText(scoreListening, { x: 280, y: 310, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(scoreReading, { x: 280, y: 285, size: 11, color: PDFLib.rgb(0, 0, 0) });
+                firstPage.drawText(totalScore, { x: 280, y: 260, size: 11, color: PDFLib.rgb(0, 0, 0) });
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Sertifikat_HSK_2_${studentName.replace(/\s+/g, '_')}.pdf`;
+                link.click();
+            } catch (error) {
+                console.error("Gagal membuat sertifikat:", error);
+                alert("Gagal mengunduh sertifikat. Pastikan file 'certificate-template.pdf' sudah di-upload ke GitHub Anda.");
+            }
         }
     </script>
 </body>
