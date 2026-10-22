@@ -425,7 +425,7 @@
                 
                 document.getElementById('final-score').innerText = res.skorTotal || totalScore;
                 document.getElementById('score-listening').innerText = (res.skorListening !== undefined ? res.skorListening : finalListening) + " / 100";
-                document.getElementById('score-reading').innerText = (res.scoreReading !== undefined ? res.scoreReading : finalReading) + " / 100";
+                document.getElementById('score-reading').innerText = (res.skorReading !== undefined ? res.scoreReading : finalReading) + " / 100";
                 
                 let badge = document.getElementById('passing-badge');
                 if ((res.skorTotal || totalScore) >= 120) {
@@ -442,7 +442,7 @@
             });
         }
 
-        // FUNGSI UTAMA GENERASI SERTIFIKAT PDF PRESISI (AMAN & ANTI-GAGAL)
+        // FUNGSI UTAMA GENERASI SERTIFIKAT PDF PRESISI
         async function downloadCertificate() {
             try {
                 // Memanggil file gambar sertifikat dari GitHub Anda
@@ -471,7 +471,7 @@
                 // Ambil Data Nilai dan Biodata
                 const name = studentName.toUpperCase();
                 
-                // GENDER: Menggunakan teks bahasa Inggris (Male / Female) agar aman dan tampil rapi tanpa error font Hanzi
+                // GENDER: Male / Female
                 let genderCert = "Male";
                 if (studentGender.toLowerCase().includes("perempuan") || studentGender.toLowerCase().includes("female") || studentGender.includes("女")) {
                     genderCert = "Female";
@@ -489,41 +489,41 @@
                 const randomNo = "HSK2-" + Math.floor(100000 + Math.random() * 900000);
 
                 // ==============================================================
-                // KOORDINAT PENYESUAIAN PRESISI FINAL (TERGESER PAS DI ATAS GARIS)
+                // KOORDINAT PENYESUAIAN PRESISI FINAL (DIKOREKSI DARI FOTO CATATAN)
                 // ==============================================================
 
-                // 1. Nama (Name) - Digeser sedikit ke kiri & bawah agar pas
-                page.drawText(name, { x: width * 0.21, y: height * 0.672, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 1. Nama (Name) - Digeser ke kanan (x: 0.28) agar tidak menimpa Name
+                page.drawText(name, { x: width * 0.28, y: height * 0.672, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 2. Jenis Kelamin (Gender) - Teks Male / Female yang bersih & presisi
-                page.drawText(genderCert, { x: width * 0.21, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 2. Jenis Kelamin (Gender) - Digeser ke kanan (x: 0.28) agar tidak menimpa Gender
+                page.drawText(genderCert, { x: width * 0.28, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 3. Kewarganegaraan (Nationality)
-                page.drawText(nationality, { x: width * 0.53, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 3. Kewarganegaraan (Nationality) - Diturunkan sedikit agar pas di atas garis
+                page.drawText(nationality, { x: width * 0.54, y: height * 0.630, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 4. Tahun (Year) - Digeser pas sebelum karakter 年
+                // 4. Tahun (Year) - x: 0.395 (pas)
                 page.drawText(year, { x: width * 0.395, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 5. Bulan (Month) - Digeser pas sebelum karakter 月
-                page.drawText(month, { x: width * 0.545, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 5. Bulan (Month) - Digeser ke kanan (x: 0.58) agar tidak menimpa 月
+                page.drawText(month, { x: width * 0.58, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // 6. Hari (Day) - Digeser pas sebelum karakter 日
-                page.drawText(day, { x: width * 0.665, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // 6. Hari (Day) - Digeser ke kanan (x: 0.72) agar tidak menimpa 日
+                page.drawText(day, { x: width * 0.72, y: height * 0.589, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
-                // Nomor Sertifikat (No.)
-                page.drawText(randomNo, { x: width * 0.21, y: height * 0.548, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
+                // Nomor Sertifikat (No.) - Digeser ke kanan (x: 0.28) agar tidak menimpa No.
+                page.drawText(randomNo, { x: width * 0.28, y: height * 0.548, size: height * 0.015, color: PDFLib.rgb(0, 0, 0) });
 
                 // ==============================================================
-                // TABEL SKOR NILAI
+                // TABEL SKOR NILAI (DINAIKKAN/Y-AXIS DIURUTKAN ULANG)
                 // ==============================================================
-                // Skor Listening
-                page.drawText(scoreListening, { x: width * 0.68, y: height * 0.443, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+                // Skor Listening (Dinaikkan dari 0.443 -> 0.455)
+                page.drawText(scoreListening, { x: width * 0.68, y: height * 0.455, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
-                // Skor Reading
-                page.drawText(scoreReading, { x: width * 0.68, y: height * 0.403, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+                // Skor Reading (Dinaikkan dari 0.403 -> 0.418)
+                page.drawText(scoreReading, { x: width * 0.68, y: height * 0.418, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
-                // Total Skor
-                page.drawText(totalScore, { x: width * 0.68, y: height * 0.363, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
+                // Total Skor (Dinaikkan dari 0.363 -> 0.380)
+                page.drawText(totalScore, { x: width * 0.68, y: height * 0.380, size: height * 0.018, color: PDFLib.rgb(0, 0, 0) });
 
                 // Unduh File PDF
                 const pdfBytes = await pdfDoc.save();
